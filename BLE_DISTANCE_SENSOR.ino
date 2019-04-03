@@ -209,13 +209,13 @@ BLEDescriptor* pDescriptor = new BLEDescriptor(CLIENT_CHARCTERISTIC_CONFIG_DESCR
 void loop() {
   
   float distance = get_distance();
-  float avg_distance = get_distance_avg();
+  //float avg_distance = get_distance_avg();
   int min_distance = get_distance_min();
 
   Serial.write("distance: ");
   Serial.print(distance) ;
-  Serial.write(" , avg. distance: ");
-  Serial.print(avg_distance) ;
+  //Serial.write(" , avg. distance: ");
+  //Serial.print(avg_distance) ;
   Serial.write(" , min. distance: ");
   Serial.print(min_distance) ;  
   Serial.write(" cm\n");
@@ -274,7 +274,7 @@ float get_distance_avg() {
 
 uint8_t get_distance_min() {
   
-  float min;
+  float min=255.0;
   float dist;
   int i;
 

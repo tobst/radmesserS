@@ -30,7 +30,7 @@ const int triggerPin = 15;
 const int echoPin = 4;
 
 // VARs
-const int runs = 10;
+const int runs = 20;
 
 BLECharacteristic *pCharacteristic;
 BLECharacteristic *pSystemIDCharcateristic;
@@ -42,12 +42,9 @@ BLECharacteristic *pSoftwareRevisionCharacteristic;
 BLECharacteristic *pManufacturerNameCharacteristic;
 BLECharacteristic *pSensorLocationCharacteristic;
 BLECharacteristic *pHeartRateControlPointCharacteristic;
-
 BLECharacteristic *pBatteryCharacteristics;
-BLECharacteristic *pGenericAccessDeviceNameCharacteristic;
 
 bool deviceConnected = false;
-uint8_t value = 180;
 
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
@@ -120,7 +117,6 @@ void setup() {
   BLEService *pDeviceInfoService = pServer->createService(DEVICE_INFORMATION_UUID);
   BLEService *pHeartRateService = pServer->createService(HEART_RATE_SERVICE_UUID);
   BLEService *pBatteryLevelService = pServer->createService(BATTERY_SERVICE_UUID);
-  BLEService *pGenericAccessService = pServer->createService(GENERIC_ACCESS_UUID);
 
 
   
@@ -142,14 +138,6 @@ void setup() {
  pSensorLocationCharacteristic = pHeartRateService->createCharacteristic(BODY_SENDOR_LOCATION_UUID, BLECharacteristic::PROPERTY_READ);
  uint8_t locationValue = 1;
  pSensorLocationCharacteristic->setValue(&locationValue,1);
-
- pGenericAccessDeviceNameCharacteristic = pGenericAccessService->createCharacteristic(GENERIC_ACCESS_DEVICE_NAME_CHARACTERISTIC_UUID,  
-                      BLECharacteristic::PROPERTY_READ   |
-                      BLECharacteristic::PROPERTY_WRITE
-                      //BLECharacteristic::PROPERTY_NOTIFY //|
-                      //BLECharacteristic::PROPERTY_INDICATE
-                    );
-
 
 
  pSystemIDCharcateristic = pDeviceInfoService->createCharacteristic(SYSTEM_ID_UUID, BLECharacteristic::PROPERTY_READ);
@@ -231,8 +219,6 @@ void loop() {
     
     pCharacteristic->setValue(buffer, 2);
     pCharacteristic->notify();
-    //pCharacteristic->indicate();
-    value++;
   }
   //delay(2000);
 }

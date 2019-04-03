@@ -223,7 +223,7 @@ float get_distance() {
   digitalWrite(triggerPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(triggerPin, LOW);
-  duration = pulseIn(echoPin, HIGH); // Erfassung - Dauer in Mikrosekunden
+  duration = pulseIn(echoPin, HIGH, 30000); // Erfassung - Dauer in Mikrosekunden
   interrupts();
 
   distance = (duration / 2) / 29.1; // Distanz in CM
@@ -257,7 +257,7 @@ uint8_t get_distance_min() {
   delay(100);
   for (i=0; i<runs; i++) {
     dist = get_distance();
-    if (dist < min)
+    if ((dist > 0.0) && (dist < min))
     {
       min=dist;
     }

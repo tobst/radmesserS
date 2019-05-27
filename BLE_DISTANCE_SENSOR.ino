@@ -33,6 +33,7 @@ BLECharacteristic *pManufacturerNameCharacteristic;
 BLECharacteristic *pSensorLocationCharacteristic;
 BLECharacteristic *pHeartRateControlPointCharacteristic;
 BLECharacteristic *pBatteryCharacteristics;
+BLECharacteristic *pHandleBarWidthCharacteristic;
 
 bool deviceConnected = false;
 
@@ -73,6 +74,9 @@ bool deviceConnected = false;
 #define GENERIC_ACCESS_UUID        "00001800-0000-1000-8000-00805F9B34FB"
 #define GENERIC_ACCESS_DEVICE_NAME_CHARACTERISTIC_UUID "00002a00-0000-1000-8000-00805f9b34fb"
 
+#define HANDLEBAR_WIDTH_SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+#define HANDLEBAR_WIDTH_CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
+
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) {
@@ -81,6 +85,15 @@ class MyServerCallbacks: public BLEServerCallbacks {
 
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
+    }
+
+};
+
+class MyWriterCallbacks: public BLECharacteristicCallbacks {
+
+    void onWrite(BLECharacteristic *pCharacteristic) {
+      std::string value = pCharacteristic->getValue();
+      double handleBarWidth = atof(value.c_str());
     }
 };
 
@@ -107,7 +120,7 @@ void setup() {
   BLEService *pDeviceInfoService = pServer->createService(DEVICE_INFORMATION_UUID);
   BLEService *pHeartRateService = pServer->createService(HEART_RATE_SERVICE_UUID);
   BLEService *pBatteryLevelService = pServer->createService(BATTERY_SERVICE_UUID);
-
+  BLEService *pHandleBarWidthService = pServer->createService(HANDLEBAR_WIDTH_SERVICE_UUID);
 
   
   // Create a BLE Characteristic
@@ -119,6 +132,13 @@ void setup() {
                       //BLECharacteristic::PROPERTY_INDICATE
                     );
  pHeartRateControlPointCharacteristic = pHeartRateService->createCharacteristic( HEART_RATE_CONTROL_POINT_UUID,
+                      BLECharacteristic::PROPERTY_READ   |
+                      BLECharacteristic::PROPERTY_WRITE
+                      //BLECharacteristic::PROPERTY_NOTIFY //|
+                      //BLECharacteristic::PROPERTY_INDICATE
+                    );
+
+ pHandleBarWidthCharacteristic = pHandleBarWidthService->createCharacteristic(HANDLEBAR_WIDTH_CHARACTERISTIC_UUID,
                       BLECharacteristic::PROPERTY_READ   |
                       BLECharacteristic::PROPERTY_WRITE
                       //BLECharacteristic::PROPERTY_NOTIFY //|
@@ -172,10 +192,15 @@ BLEDescriptor* pDescriptor = new BLEDescriptor(CLIENT_CHARCTERISTIC_CONFIG_DESCR
     descriptorbuffer = 1;
   pDescriptor->setValue(&descriptorbuffer,1);
 
+ pHandleBarWidthCharacteristic->setCallbacks(new MyWriterCallbacks());
+ 
+pHandleBarWidthCharacteristic->setValue("23.0");
+
   // Start the service
   pHeartRateService->start();
   pDeviceInfoService->start();
   pBatteryLevelService->start();
+  pHandleBarWidthService->start();
     
   // Start advertising
   BLEAdvertisementData* data;

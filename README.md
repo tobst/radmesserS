@@ -17,6 +17,8 @@ The prototype by Zweirat used the following:
 * [LiFePo charging module](https://www.ebay.de/itm/MicroUSB-TP5000-3-6v-1A-Charger-Module-3-2v-LiFePO4-Lithium-Battery-Charging-/122164745507)
 * [HC-SR04P](https://www.ebay.de/itm/183610614563)
 
+With LiFePo Batteries you can power the device directly and avoid step-up/step-down losses that you have when using a powerbank. On the other hand you need the HC-SR04P instead of the HC-SR04 sensor if you don't have 5V power supply.
+
 ### Dependencies
 
 * ESP32 device driver

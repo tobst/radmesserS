@@ -33,6 +33,7 @@ The prototype by Zweirat used the following:
 ### Executing program
 
 * Start your favourite tracking app
+Good results were made with [RunnerUp](https://play.google.com/store/apps/details?id=org.runnerup&hl=de), Strava had some issues on Android, look here for [alternatives](https://play.google.com/store/apps/details?id=org.runnerup&hl=de), no experience with iOS so far. 
 * Connect heart rate sensor
 
 

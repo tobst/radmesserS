@@ -33,11 +33,11 @@ With LiFePo Batteries you can power the device directly and avoid step-up/step-d
 * Connect sensor
 
 ### Executing program
-
+* power up device
+* Use [BLE Scanner](https://play.google.com/store/apps/details?id=com.macdom.ble.blescanner) or your favorite BLE app to send ond permanently save offset (for example the distance from sensor to handlebar)
 * Start your favourite tracking app
 Good results were made with [RunnerUp](https://play.google.com/store/apps/details?id=org.runnerup&hl=de), Strava had some issues on Android, look here for [alternatives](https://play.google.com/store/apps/details?id=org.runnerup&hl=de), no experience with iOS so far. 
 * Connect heart rate sensor
-
 
 ## Acknowledgments
 

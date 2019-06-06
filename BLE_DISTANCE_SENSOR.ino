@@ -14,6 +14,10 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <Wire.h>
+#include <EEPROM.h>
+
+// define the number of bytes to store
+#define EEPROM_SIZE 1
 
 // PINs
 const int triggerPin = 15;
@@ -21,6 +25,10 @@ const int echoPin = 4;
 
 // VARs
 const int runs = 20;
+unsigned long measureInterval = 1000;
+unsigned long StartTime = millis();
+unsigned long CurrentTime = millis();
+uint8_t handleBarWidth;
 
 BLECharacteristic *pCharacteristic;
 BLECharacteristic *pSystemIDCharcateristic;
@@ -93,7 +101,9 @@ class MyWriterCallbacks: public BLECharacteristicCallbacks {
 
     void onWrite(BLECharacteristic *pCharacteristic) {
       std::string value = pCharacteristic->getValue();
-      double handleBarWidth = atof(value.c_str());
+      handleBarWidth = atoi(value.c_str());
+      EEPROM.write(0, handleBarWidth);
+      EEPROM.commit();
     }
 };
 
@@ -101,7 +111,12 @@ class MyWriterCallbacks: public BLECharacteristicCallbacks {
 
 void setup() {
   Serial.begin(115200);
+  
+  // initialize EEPROM with predefined size
+  EEPROM.begin(EEPROM_SIZE);
 
+  handleBarWidth = EEPROM.read(0);
+  
 
   // PIN-Modes
   pinMode(triggerPin, OUTPUT);
@@ -193,8 +208,9 @@ BLEDescriptor* pDescriptor = new BLEDescriptor(CLIENT_CHARCTERISTIC_CONFIG_DESCR
   pDescriptor->setValue(&descriptorbuffer,1);
 
  pHandleBarWidthCharacteristic->setCallbacks(new MyWriterCallbacks());
- 
-pHandleBarWidthCharacteristic->setValue("23.0");
+ char handleBarString[8];
+ itoa(handleBarWidth, handleBarString, 10);
+ pHandleBarWidthCharacteristic->setValue(handleBarString);  
 
   // Start the service
   pHeartRateService->start();
@@ -210,31 +226,47 @@ pHandleBarWidthCharacteristic->setValue("23.0");
 }
 
 void loop() {
-  
-  float distance = get_distance();
+  CurrentTime = millis();
+  uint8_t minDistance = 255;
+  int measurements=0;
+  while ((CurrentTime - StartTime) < measureInterval)
+  {
+    CurrentTime = millis();
+    get_distance_min(minDistance);
+    measurements++;
+  }
+  //float distance = get_distance();
   //float avg_distance = get_distance_avg();
-  int min_distance = get_distance_min();
+  //int min_distance = get_distance_min();
 
-  Serial.write("distance: ");
-  Serial.print(distance) ;
+  //Serial.write("distance: ");
+  //Serial.print(distance) ;
   //Serial.write(" , avg. distance: ");
   //Serial.print(avg_distance) ;
-  Serial.write(" , min. distance: ");
-  Serial.print(min_distance) ;  
-  Serial.write(" cm\n");
+  Serial.write("min. distance: ");
+  Serial.print(minDistance) ;  
+  Serial.write(" cm,");
+  Serial.print(measurements);
+  Serial.write(" measurents  \n"); 
   
   if (deviceConnected) {
-    Serial.printf("*** NOTIFY: %d ***\n", min_distance);
+    Serial.printf("*** NOTIFY: %d ***\n", minDistance);
     uint8_t buffer[2];
     uint8_t isit8or16bit = 0;
 
    buffer[0] = isit8or16bit;
-   buffer[1] = min_distance;
+   buffer[1] = minDistance;
    //buffer[2] = value;
     
     pCharacteristic->setValue(buffer, 2);
     pCharacteristic->notify();
   }
+
+  unsigned long ElapsedTime = CurrentTime - StartTime;
+  StartTime = CurrentTime;
+  Serial.write(" Time elapsed: ");
+  Serial.print(ElapsedTime);
+  Serial.write(" milliseconds\n");
   //delay(2000);
 }
 
@@ -248,7 +280,7 @@ float get_distance() {
   digitalWrite(triggerPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(triggerPin, LOW);
-  duration = pulseIn(echoPin, HIGH, 24000); // Erfassung - Dauer in Mikrosekunden
+  duration = pulseIn(echoPin, HIGH, 15000); // Erfassung - Dauer in Mikrosekunden
   interrupts();
 
   distance = (duration / 2) / 29.1; // Distanz in CM
@@ -279,7 +311,7 @@ uint8_t get_distance_min() {
   float dist;
   int i;
 
-  delay(100);
+  delay(10);
   for (i=0; i<runs; i++) {
     dist = get_distance()-42.4;
     if ((dist > 0.0) && (dist < min))
@@ -289,5 +321,15 @@ uint8_t get_distance_min() {
     delay(20);
   }
   return (uint8_t(min));
+}
+
+void get_distance_min(uint8_t& min_distance) {
+  float dist;
+  dist = get_distance()-float(handleBarWidth);
+    if ((dist > 0.0) && (dist < float(min_distance)))
+    {
+      min_distance=uint8_t(dist);
+    }
+    delay(20);
 }
 

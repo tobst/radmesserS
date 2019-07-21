@@ -4,7 +4,7 @@ Distance Measurement HC-SR04 sensors connected to ESP32 pretending to be heart r
 
 ## Description
 
-Inspired by the Berlin project Radmesser, this version connects to tracking apps by pretending to be a heart rate sensor. This enables you to write the distance to a gpx file and use it later in video editing software like [dashware](http://www.dashware.net/) to show the distance in your video.
+Inspired by the Berlin project Radmesser, this version connects to tracking apps by pretending to be a heart rate sensor. This enables you to write the distance to a gpx file and use it later in video editing software like [Dashware](http://www.dashware.net/) or [Garmin Virb Edit](https://buy.garmin.com/de-DE/DE/p/573412) to show the distance in your video.
 
 ## Getting Started
 
@@ -38,6 +38,10 @@ With LiFePo Batteries you can power the device directly and avoid step-up/step-d
 * Start your favourite tracking app
 Good results were made with [RunnerUp](https://play.google.com/store/apps/details?id=org.runnerup&hl=de), Strava had some issues on Android, look here for [alternatives](https://play.google.com/store/apps/details?id=org.runnerup&hl=de), no experience with iOS so far. 
 * Connect heart rate sensor
+
+### ToDo
+* Write nice tutorial how to process video data and create synchronized overlays
+* Develop an own app to record videos in loop mode and only save short clips when distance is low. At the end of the ride, ask user to confirm that a car was overtaking. Possibility to create overlays for video and report anonymous metadata of overtaking incidents (good and bad ones) to open data platform.
 
 ## Acknowledgments
 

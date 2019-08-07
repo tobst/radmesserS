@@ -10,7 +10,7 @@ Inspired by the Berlin project Radmesser, this version connects to tracking apps
 
 ### Hardware
 
-The prototype by Zweirat used the following:
+The prototype by [Zweirat](https://zweirat-stuttgart.de/projekte/radmesser/) used the following:
 * [ESP32](https://www.az-delivery.de/products/esp32-developmentboard)
 * [LiFePo-Battery](https://www.akkuteile.de/lifepo-akkus/18650/a123-apr18650m-a1-1100mah-3-2v-3-3v-lifepo4-akku/a-1006861/)
 * [Battery-Protection-Board](https://www.ebay.de/itm/202033076322)

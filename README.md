@@ -47,4 +47,4 @@ Good results were made with [RunnerUp](https://play.google.com/store/apps/detail
 
 Inspiration, code snippets, etc.
 * [Neil Kolbans ESP32 BLE Library](https://github.com/nkolban/ESP32_BLE_Arduino)
-* [Wiring up the Sensor](https://www.smarthomeng.de/entfernungsmessung-auf-basis-eines-esp32-und-smarthomeng)
+* [Wiring up the Sensor](https://www.smarthomeng.de/entfernungsmessung-auf-basis-eines-esp32-und-smarthomeng)

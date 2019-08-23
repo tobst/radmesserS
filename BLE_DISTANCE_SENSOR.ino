@@ -28,7 +28,8 @@ const int runs = 20;
 unsigned long measureInterval = 1000;
 unsigned long StartTime = millis();
 unsigned long CurrentTime = millis();
-uint8_t handleBarWidth;
+uint8_t handleBarWidth = 0;
+int timeout = 15000;
 
 BLECharacteristic *pCharacteristic;
 BLECharacteristic *pSystemIDCharcateristic;
@@ -102,6 +103,7 @@ class MyWriterCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
       std::string value = pCharacteristic->getValue();
       handleBarWidth = atoi(value.c_str());
+      timeout = 15000 + (int)(handleBarWidth * 29.1 * 2);
       EEPROM.write(0, handleBarWidth);
       EEPROM.commit();
     }
@@ -116,7 +118,7 @@ void setup() {
   EEPROM.begin(EEPROM_SIZE);
 
   handleBarWidth = EEPROM.read(0);
-  
+  timeout = 15000 + (int)(handleBarWidth * 29.1 * 2);
 
   // PIN-Modes
   pinMode(triggerPin, OUTPUT);

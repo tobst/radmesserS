@@ -282,7 +282,7 @@ float get_distance() {
   digitalWrite(triggerPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(triggerPin, LOW);
-  duration = pulseIn(echoPin, HIGH, 15000); // Erfassung - Dauer in Mikrosekunden
+  duration = pulseIn(echoPin, HIGH, timeout); // Erfassung - Dauer in Mikrosekunden
   interrupts();
 
   distance = (duration / 2) / 29.1; // Distanz in CM

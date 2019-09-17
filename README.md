@@ -14,6 +14,8 @@ More information can be found in the project wiki, [see here](https://github.com
 
 ![](https://github.com/tobst/radmesserS/blob/master/images/device/device_case_1_800x800.jpg)
 
+![](https://github.com/tobst/radmesserS/blob/master/images/mounting_1_800x800.jpg)
+
 The prototype by [Zweirat](https://zweirat-stuttgart.de/projekte/radmesser/) used the following:
 * [ESP32](https://www.az-delivery.de/products/esp32-developmentboard)
 * [LiFePo-Battery](https://www.akkuteile.de/lifepo-akkus/18650/a123-apr18650m-a1-1100mah-3-2v-3-3v-lifepo4-akku/a-1006861/)

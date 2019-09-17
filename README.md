@@ -6,9 +6,13 @@ Distance Measurement HC-SR04 sensors connected to ESP32 pretending to be heart r
 
 Inspired by the Berlin project Radmesser, this version connects to tracking apps by pretending to be a heart rate sensor. This enables you to write the distance to a gpx file and use it later in video editing software like [Dashware](http://www.dashware.net/) or [Garmin Virb Edit](https://buy.garmin.com/de-DE/DE/p/573412) to show the distance in your video.
 
+More information can be found in the project wiki, [see here](https://github.com/tobst/radmesserS/wiki).
+
 ## Getting Started
 
 ### Hardware
+
+![](https://github.com/tobst/radmesserS/blob/master/images/device/device_case_1_800x800.jpg)
 
 The prototype by [Zweirat](https://zweirat-stuttgart.de/projekte/radmesser/) used the following:
 * [ESP32](https://www.az-delivery.de/products/esp32-developmentboard)

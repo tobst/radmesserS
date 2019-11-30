@@ -26,6 +26,7 @@
 
 #include "gps.h"
 #include "ble.h"
+#include "writer.h"
 //GPS
 
 
@@ -91,6 +92,7 @@ class MyWriterCallbacks: public BLECharacteristicCallbacks {
 DisplayDevice* displayTest;
 DisplayDevice* displayTest2;
 
+FileWriter* writer;
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
@@ -99,6 +101,7 @@ void setup() {
 
   displayTest = new TM1637DisplayDevice;
   displayTest2 = new SSD1306DisplayDevice;
+  writer = new CSVFileWriter;
 
   //GPS
   SerialGPS.begin(9600, SERIAL_8N1, 16, 17);
@@ -138,7 +141,7 @@ void setup() {
       fileSuffix++;
       filename = base_filename + String(fileSuffix) + ".txt";
     }
-    writeFile(SD, filename.c_str(), "Data \n ");
+    writer->writeFile(SD, filename.c_str(), "Data \n ");
   }
 
   // initialize EEPROM with predefined size
@@ -344,7 +347,7 @@ void loop() {
     text += ";";
     text += String(gps.location.lng(), 6);
     text += ";";
-    appendFile(SD, filename.c_str(), text.c_str() );
+    writer->appendFile(SD, filename.c_str(), text.c_str() );
     text = "";
   }
 
@@ -400,7 +403,7 @@ void loop() {
     String confirmed = "\nDistance confirmed:" + String(minDistanceToConfirm) + "\n" + String(millis()) + ";";
     minDistanceToConfirm = 255;
     transmitConfirmedData = false;
-    appendFile(SD, filename.c_str(), confirmed.c_str() );
+    writer->appendFile(SD, filename.c_str(), confirmed.c_str() );
   }
   else
   {

@@ -7,10 +7,6 @@ const int DIO = 25; //Set the DIO pin connection to the display
 //Segments for line of dashes on display
 uint8_t segments[] = {64, 64, 64, 64};
 
-//TM1637Display display(CLK, DIO);
-
-//SSD1306  displayOLED(0x3c, 21, 22);
-
 /*
 
 

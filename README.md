@@ -30,6 +30,9 @@ With LiFePo Batteries you can power the device directly and avoid step-up/step-d
 * ESP32 device driver
 * Neil Kolbans ESP32 BLE Library
 * Arduino IDE
+* [TM1637 Library](https://github.com/avishorp/TM1637) - installed through Arduino library manager
+* [SSD1306 Library](https://github.com/adafruit/Adafruit_SSD1306) - installed through Arduino library manager
+* [TinyGPSPlus Library](https://github.com/mikalhart/TinyGPSPlus)
 
 ### Installing
 

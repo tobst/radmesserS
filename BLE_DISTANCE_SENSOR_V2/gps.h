@@ -16,3 +16,5 @@ struct GpsDataState_t {
   double prevDist = 0;
 };
 GpsDataState_t gpsState = {};
+
+

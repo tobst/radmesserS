@@ -1,6 +1,6 @@
 
-void heartRateBLEInit(){
-    // Create the BLE Device
+void heartRateBLEInit() {
+  // Create the BLE Device
   BLEDevice::init("Polar H7 2DBA0B2F");
 
   // Create the BLE Server
@@ -98,5 +98,11 @@ void heartRateBLEInit(){
   BLEAdvertisementData* data;
   pServer->getAdvertising()->addServiceUUID(pHeartRateService->getUUID());
   pServer->getAdvertising()->start();
+}
+
+
+void heartRateBLENotify(uint8_t buffer[2]) {
+  pCharacteristic->setValue(buffer, 2);
+  pCharacteristic->notify();
 }
 

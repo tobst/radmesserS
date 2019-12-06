@@ -24,6 +24,7 @@ class FileWriter
     void setLatitude(double);
     void setLongitude(double);
     void setDateTime(GPSDateTime);
+    void setFileName();
     virtual void init() = 0;
 
   protected:
@@ -31,6 +32,8 @@ class FileWriter
   private:
     double m_latitude;
     double m_longitude;
+    String m_filename;
+    
 };
 
 class CSVFileWriter : public FileWriter

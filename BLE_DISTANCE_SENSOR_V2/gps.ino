@@ -1,5 +1,5 @@
 void readGPSData() {
-   gpsState.distMax = 0;
+  gpsState.distMax = 0;
   gpsState.altMax = -999999;
   gpsState.spdMax = 0;
   gpsState.altMin = 999999;
@@ -37,5 +37,32 @@ void readGPSData() {
     nextSerialTaskTs = millis() + TASK_SERIAL_RATE;
   }
 
+}
+
+void writeLastFixToEEPROM() {
+  // Aktuelle Position in nichtflüchtigen ESP32-Speicher schreiben
+  long writeValue;
+  writeValue = gpsState.originLat * 1000000;
+  EEPROM_writeAnything(4, writeValue);
+  writeValue = gpsState.originLon * 1000000;
+  EEPROM_writeAnything(8, writeValue);
+  writeValue = gpsState.originAlt * 1000000;
+  EEPROM_writeAnything(12, writeValue);
+  EEPROM.commit(); // erst mit commit() werden die Daten geschrieben
+}
+
+void readLastFixFromEEPROM() {
+  /*
+    Read last gps fix from EEPROM
+  */
+  long readValue;
+  EEPROM_readAnything(4, readValue);
+  gpsState.originLat = (double)readValue / 1000000;
+
+  EEPROM_readAnything(8, readValue);
+  gpsState.originLon = (double)readValue / 1000000;
+
+  EEPROM_readAnything(12, readValue);
+  gpsState.originAlt = (double)readValue / 1000000;
 }
 

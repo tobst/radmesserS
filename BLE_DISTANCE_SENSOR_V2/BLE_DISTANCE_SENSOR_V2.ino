@@ -15,6 +15,7 @@
 #include <BLE2902.h>
 #include <Wire.h>
 #include <EEPROM.h>
+#include <CircularBuffer.h>
 #include "displays.h"
 #include "FS.h"
 #include "SD.h"
@@ -27,8 +28,8 @@
 #include "gps.h"
 #include "ble.h"
 #include "writer.h"
+#include "sensor.h"
 //GPS
-
 
 // define the number of bytes to store
 #define EEPROM_SIZE 1
@@ -93,6 +94,8 @@ DisplayDevice* displayTest;
 DisplayDevice* displayTest2;
 
 FileWriter* writer;
+
+DistanceSensor* sensor1;
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
@@ -102,6 +105,7 @@ void setup() {
   displayTest = new TM1637DisplayDevice;
   displayTest2 = new SSD1306DisplayDevice;
   writer = new CSVFileWriter;
+  sensor1 = new HCSR04DistanceSensor;
 
   //GPS
   SerialGPS.begin(9600, SERIAL_8N1, 16, 17);
@@ -109,22 +113,8 @@ void setup() {
     true;
   }
 
-  /*
-     Die drei Achsrichtungen x, y, z aus dem Speicher
-     lesen und hinterlegen
-  */
-  long readValue;
-  EEPROM_readAnything(4, readValue);
-  gpsState.originLat = (double)readValue / 1000000;
-
-  EEPROM_readAnything(8, readValue);
-  gpsState.originLon = (double)readValue / 1000000;
-
-  EEPROM_readAnything(12, readValue);
-  gpsState.originAlt = (double)readValue / 1000000;
-
-
-
+  readLastFixFromEEPROM();
+  
   Serial.begin(115200);
   if (!SD.begin())
   {
@@ -147,17 +137,12 @@ void setup() {
   // initialize EEPROM with predefined size
   EEPROM.begin(EEPROM_SIZE);
 
-  handleBarWidth = EEPROM.read(0);
-  timeout = 15000 + (int)(handleBarWidth * 29.1 * 2);
+  sensor1->setOffset(EEPROM.read(0));
 
   // PIN-Modes
-  pinMode(triggerPin, OUTPUT);
-  pinMode(echoPin, INPUT);
   pinMode(PushButton, INPUT);
-  digitalWrite(triggerPin, HIGH);
 
   heartRateBLEInit();
-
   Serial.println("Waiting a client connection to notify...");
 }
 
@@ -184,25 +169,14 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 
 void loop() {
 
-  static int p0 = 0;
-
   // GPS Koordinaten von Modul lesen
   gpsState.originLat = gps.location.lat();
   gpsState.originLon = gps.location.lng();
   gpsState.originAlt = gps.altitude.meters();
 
-  // Aktuelle Position in nichtflüchtigen ESP32-Speicher schreiben
-  long writeValue;
-  writeValue = gpsState.originLat * 1000000;
-  EEPROM_writeAnything(4, writeValue);
-  writeValue = gpsState.originLon * 1000000;
-  EEPROM_writeAnything(8, writeValue);
-  writeValue = gpsState.originAlt * 1000000;
-  EEPROM_writeAnything(12, writeValue);
-  EEPROM.commit(); // erst mit commit() werden die Daten geschrieben
+  writeLastFixToEEPROM();
+  readGPSData();
 
- readGPSData();
- 
   if (usingSD)
   {
     text += "\n";
@@ -227,7 +201,7 @@ void loop() {
   while ((CurrentTime - StartTime) < measureInterval)
   {
     CurrentTime = millis();
-    get_distance_min(minDistance);
+    sensor1->getMinDistance(minDistance);
 
     if (minDistance < minDistanceToConfirm)
     {
@@ -245,14 +219,7 @@ void loop() {
   }
   text += String(minDistance);
   text += ";";
-  //float distance = get_distance();
-  //float avg_distance = get_distance_avg();
-  //int min_distance = get_distance_min();
 
-  //Serial.write("distance: ");
-  //Serial.print(distance) ;
-  //Serial.write(" , avg. distance: ");
-  //Serial.print(avg_distance) ;
   Serial.write("min. distance: ");
   Serial.print(minDistance) ;
   Serial.write(" cm,");
@@ -276,12 +243,8 @@ void loop() {
   }
 
   if (deviceConnected) {
-
     Serial.printf("*** NOTIFY: %d ***\n", buffer[1] );
-    //buffer[2] = value;
-
-    pCharacteristic->setValue(buffer, 2);
-    pCharacteristic->notify();
+    heartRateBLENotify(buffer);
   }
 
   unsigned long ElapsedTime = CurrentTime - StartTime;
@@ -289,80 +252,4 @@ void loop() {
   Serial.write(" Time elapsed: ");
   Serial.print(ElapsedTime);
   Serial.write(" milliseconds\n");
-
-
-  //delay(2000);
 }
-
-float get_distance() {
-  float duration = 0;
-  float distance = 0;
-
-  digitalWrite(triggerPin, LOW);
-  delayMicroseconds(2);
-  noInterrupts();
-  digitalWrite(triggerPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(triggerPin, LOW);
-  duration = pulseIn(echoPin, HIGH, timeout); // Erfassung - Dauer in Mikrosekunden
-  interrupts();
-
-  distance = (duration / 2) / 29.1; // Distanz in CM
-  return (distance);
-}
-
-float get_distance_avg() {
-  float alt = 0;
-  float avg;
-  float dist;
-  int i;
-
-  delay(10);
-  alt = get_distance();
-  delay(10);
-  for (i = 0; i < runs; i++) {
-    dist = get_distance();
-    avg = (0.8 * alt) + (0.2 * dist);
-    alt = avg;
-    delay(10);
-  }
-  return (avg);
-}
-
-uint8_t get_distance_min() {
-
-  float min = 255.0;
-  float dist;
-  int i;
-
-  delay(10);
-  for (i = 0; i < runs; i++) {
-    dist = get_distance() - 42.4;
-    if ((dist > 0.0) && (dist < min))
-    {
-      min = dist;
-    }
-    delay(20);
-  }
-  return (uint8_t(min));
-}
-
-void get_distance_min(uint8_t& min_distance) {
-  float dist;
-  dist = get_distance() - float(handleBarWidth);
-  if ((dist > 0.0) && (dist < float(min_distance)))
-  {
-    min_distance = uint8_t(dist);
-  }
-  else
-  {
-    dist = 0.0;
-  }
-  if (usingSD)
-  {
-    //text += String(dist);
-    //text += ";";
-  }
-  delay(20);
-}
-

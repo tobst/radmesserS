@@ -15,6 +15,7 @@
 #include <BLE2902.h>
 #include <Wire.h>
 #include <EEPROM.h>
+#define CIRCULAR_BUFFER_INT_SAFE
 #include <CircularBuffer.h>
 #include "displays.h"
 #include "FS.h"
@@ -27,13 +28,17 @@
 
 #include "gps.h"
 #include "ble.h"
+#include "vector.h"
 #include "writer.h"
 #include "sensor.h"
+
 //GPS
 
 // define the number of bytes to store
 #define EEPROM_SIZE 1
 #define EEPROM_SIZE 128
+
+#define MAX_SENSOR_VALUE 255
 
 // PINs
 const int triggerPin = 15;
@@ -53,12 +58,14 @@ unsigned long CurrentTime = millis();
 int timeout = 15000;
 bool usingSD = false;
 String text = "";
-uint8_t minDistanceToConfirm = 255;
-uint8_t confirmedMinDistance = 255;
+uint8_t minDistanceToConfirm = MAX_SENSOR_VALUE;
+uint8_t confirmedMinDistance = MAX_SENSOR_VALUE;
 bool transmitConfirmedData = false;
 
 String filename;
 
+CircularBuffer<DataSet*, 10> dataBuffer;
+Vector<String> sensorNames;
 
 #define TASK_SERIAL_RATE 1000 // ms
 
@@ -78,6 +85,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
     }
 
 };
+
 
 class MyWriterCallbacks: public BLECharacteristicCallbacks {
 
@@ -101,7 +109,8 @@ DistanceSensor* sensor1;
 
 
 void setup() {
-
+  Vector<uint8_t> sensorValues;
+  sensorNames.push_back("DistanceLeft");
   displayTest = new TM1637DisplayDevice;
   displayTest2 = new SSD1306DisplayDevice;
   writer = new CSVFileWriter;
@@ -114,7 +123,7 @@ void setup() {
   }
 
   readLastFixFromEEPROM();
-  
+
   Serial.begin(115200);
   if (!SD.begin())
   {
@@ -123,15 +132,9 @@ void setup() {
   else
   {
     usingSD = true;
-    int fileSuffix = 0;
-    String base_filename = "/sensorData";
-    filename = base_filename + String(fileSuffix) + ".txt";
-    while (SD.exists(filename.c_str()))
-    {
-      fileSuffix++;
-      filename = base_filename + String(fileSuffix) + ".txt";
-    }
-    writer->writeFile(SD, filename.c_str(), "Data \n ");
+    writer->setFileName();
+    writer->writeHeader();
+    //writer->writeFile(SD, filename.c_str(), "Data \n ");
   }
 
   // initialize EEPROM with predefined size
@@ -169,33 +172,39 @@ template <class T> int EEPROM_readAnything(int ee, T& value)
 
 void loop() {
 
-  // GPS Koordinaten von Modul lesen
-  gpsState.originLat = gps.location.lat();
-  gpsState.originLon = gps.location.lng();
-  gpsState.originAlt = gps.altitude.meters();
-
+  DataSet* currentSet = new DataSet;
   writeLastFixToEEPROM();
   readGPSData();
+  currentSet->location = gps.location;
+  currentSet->altitude = gps.altitude;
+  currentSet->date = gps.date;
+  currentSet->time = gps.time;
+  /*// GPS Koordinaten von Modul lesen
+    gpsState.originLat = gps.location.lat();
+    gpsState.originLon = gps.location.lng();
+    gpsState.originAlt = gps.altitude.meters();*/
 
   if (usingSD)
   {
-    text += "\n";
-    text += String(millis());
-    text += ";";
-    text += String(gps.location.lat(), 6);
-    text += ";";
-    text += String(gps.location.lng(), 6);
-    text += ";";
-    writer->appendFile(SD, filename.c_str(), text.c_str() );
-    text = "";
+
+    /*
+      text += "\n";
+      text += String(millis());
+      text += ";";
+      text += String(gps.location.lat(), 6);
+      text += ";";
+      text += String(gps.location.lng(), 6);
+      text += ";";
+      writer->appendFile(SD, filename.c_str(), text.c_str() );
+      text = "";*/
   }
 
   CurrentTime = millis();
-  uint8_t minDistance = 255;
+  uint8_t minDistance = MAX_SENSOR_VALUE;
   int measurements = 0;
   if ((CurrentTime - timeOfMinimum ) > 5000)
   {
-    minDistanceToConfirm = 255;
+    minDistanceToConfirm = MAX_SENSOR_VALUE;
   }
 
   while ((CurrentTime - StartTime) < measureInterval)
@@ -211,14 +220,28 @@ void loop() {
     displayTest->showValue(minDistanceToConfirm);
     displayTest2->showValue(minDistanceToConfirm);
 
-    if ((minDistanceToConfirm < 255) && !transmitConfirmedData)
+    if ((minDistanceToConfirm < MAX_SENSOR_VALUE) && !transmitConfirmedData)
     {
       transmitConfirmedData = digitalRead(PushButton);
     }
     measurements++;
   }
-  text += String(minDistance);
-  text += ";";
+  currentSet->sensorValues[0] = minDistance;
+  
+  //if nothing was detected, write the dataset to file, otherwise write it to the buffer for confirmation
+  if ((minDistance == MAX_SENSOR_VALUE) && dataBuffer.isEmpty())
+  {
+    writer->writeData(currentSet);
+    delete currentSet;
+  }
+  else
+  {
+    dataBuffer.unshift(currentSet);
+  }
+  /*
+    text += String(minDistance);
+    text += ";";
+  */
 
   Serial.write("min. distance: ");
   Serial.print(minDistance) ;
@@ -232,14 +255,46 @@ void loop() {
   if (transmitConfirmedData)
   {
     buffer[1] = minDistanceToConfirm;
-    String confirmed = "\nDistance confirmed:" + String(minDistanceToConfirm) + "\n" + String(millis()) + ";";
-    minDistanceToConfirm = 255;
+    //String confirmed = "\nDistance confirmed:" + String(minDistanceToConfirm) + "\n" + String(millis()) + ";";
+
+    using index_t = decltype(dataBuffer)::index_t;
+    index_t j;
+    for (index_t i = 0; i < dataBuffer.size(); i++)
+    {
+      if (dataBuffer[i]->sensorValues[0] == minDistanceToConfirm)
+      {
+        j = i;
+      }
+    }
+    for (index_t i = 0; i < dataBuffer.size(); i++)
+    {
+      if (i != j)
+      {
+        dataBuffer[i]->sensorValues[0] = MAX_SENSOR_VALUE;
+      }
+    }
+
+    while (!dataBuffer.isEmpty())
+    {
+      DataSet* dataset = dataBuffer.shift();
+      writer->writeData(dataset);
+      delete dataset;
+    }
+    minDistanceToConfirm = MAX_SENSOR_VALUE;
     transmitConfirmedData = false;
-    writer->appendFile(SD, filename.c_str(), confirmed.c_str() );
+    //writer->appendFile(SD, filename.c_str(), confirmed.c_str() );
   }
   else
   {
-    buffer[1] = 255;
+    buffer[1] = MAX_SENSOR_VALUE;
+  }
+
+  if (dataBuffer.isFull())
+  {
+    DataSet* dataset = dataBuffer.shift();
+    dataset->sensorValues[0] = MAX_SENSOR_VALUE;
+    writer->writeData(dataset);
+    delete dataset;
   }
 
   if (deviceConnected) {

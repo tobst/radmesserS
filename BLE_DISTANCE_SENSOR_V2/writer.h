@@ -1,12 +1,11 @@
-struct GPSDateTime {
-  int year;
-  byte month,
-       day,
-       hour,
-       minute,
-       second,
-       hundredths;
+struct DataSet {
+  TinyGPSLocation location;
+  TinyGPSAltitude altitude;
+  TinyGPSDate date;
+  TinyGPSTime time;
+  Vector<uint8_t> sensorValues;
 };
+
 
 class FileWriter
 {
@@ -21,31 +20,31 @@ class FileWriter
     void appendFile(fs::FS &fs, const char * path, const char * message);
     void renameFile(fs::FS &fs, const char * path1, const char * path2);
     void deleteFile(fs::FS &fs, const char * path);
-    void setLatitude(double);
-    void setLongitude(double);
-    void setDateTime(GPSDateTime);
     void setFileName();
     virtual void init() = 0;
+    virtual void writeHeader() = 0;
+    virtual void writeData(DataSet*) = 0;
 
   protected:
+    String m_fileExtension;
+    String m_filename;
 
   private:
-    double m_latitude;
-    double m_longitude;
-    String m_filename;
-    
+
 };
 
 class CSVFileWriter : public FileWriter
 {
   public:
     CSVFileWriter() : FileWriter() {
+      m_fileExtension = ".csv";
     }
     ~CSVFileWriter() {}
     void init()
     {
-      
     }
+    void writeHeader();
+    void writeData(DataSet*);
   protected:
 };
 
@@ -53,7 +52,9 @@ class GPXFileWriter : public FileWriter
 {
   public:
     GPXFileWriter() : FileWriter() {
+      m_fileExtension = ".gpx";
     }
     ~GPXFileWriter() {}
   protected:
+  private:
 };

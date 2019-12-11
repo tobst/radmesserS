@@ -174,29 +174,16 @@ void loop() {
 
   DataSet* currentSet = new DataSet;
   writeLastFixToEEPROM();
+  // Todo: proceed only if gps is valid and updated
   readGPSData();
   currentSet->location = gps.location;
   currentSet->altitude = gps.altitude;
   currentSet->date = gps.date;
   currentSet->time = gps.time;
-  /*// GPS Koordinaten von Modul lesen
-    gpsState.originLat = gps.location.lat();
-    gpsState.originLon = gps.location.lng();
-    gpsState.originAlt = gps.altitude.meters();*/
 
   if (usingSD)
   {
 
-    /*
-      text += "\n";
-      text += String(millis());
-      text += ";";
-      text += String(gps.location.lat(), 6);
-      text += ";";
-      text += String(gps.location.lng(), 6);
-      text += ";";
-      writer->appendFile(SD, filename.c_str(), text.c_str() );
-      text = "";*/
   }
 
   CurrentTime = millis();
@@ -222,6 +209,7 @@ void loop() {
 
     if ((minDistanceToConfirm < MAX_SENSOR_VALUE) && !transmitConfirmedData)
     {
+      //Todo: state change detection
       transmitConfirmedData = digitalRead(PushButton);
     }
     measurements++;
@@ -238,10 +226,6 @@ void loop() {
   {
     dataBuffer.unshift(currentSet);
   }
-  /*
-    text += String(minDistance);
-    text += ";";
-  */
 
   Serial.write("min. distance: ");
   Serial.print(minDistance) ;
@@ -255,7 +239,6 @@ void loop() {
   if (transmitConfirmedData)
   {
     buffer[1] = minDistanceToConfirm;
-    //String confirmed = "\nDistance confirmed:" + String(minDistanceToConfirm) + "\n" + String(millis()) + ";";
 
     using index_t = decltype(dataBuffer)::index_t;
     index_t j;
@@ -282,7 +265,6 @@ void loop() {
     }
     minDistanceToConfirm = MAX_SENSOR_VALUE;
     transmitConfirmedData = false;
-    //writer->appendFile(SD, filename.c_str(), confirmed.c_str() );
   }
   else
   {

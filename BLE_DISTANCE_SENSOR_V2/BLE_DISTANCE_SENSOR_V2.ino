@@ -54,6 +54,7 @@ unsigned long timeOfLastNotificationAttempt = millis();
 unsigned long timeOfMinimum = millis();
 unsigned long StartTime = millis();
 unsigned long CurrentTime = millis();
+unsigned long buttonPushedTime = millis();
 
 int timeout = 15000;
 bool usingSD = false;
@@ -61,6 +62,9 @@ String text = "";
 uint8_t minDistanceToConfirm = MAX_SENSOR_VALUE;
 uint8_t confirmedMinDistance = MAX_SENSOR_VALUE;
 bool transmitConfirmedData = false;
+int lastButtonState = 0;
+int buttonState = 0;
+bool handleBarWidthReset = false;
 
 String filename;
 
@@ -86,9 +90,7 @@ class MyServerCallbacks: public BLEServerCallbacks {
 
 };
 
-
 class MyWriterCallbacks: public BLECharacteristicCallbacks {
-
     void onWrite(BLECharacteristic *pCharacteristic) {
       std::string value = pCharacteristic->getValue();
       handleBarWidth = atoi(value.c_str());
@@ -109,11 +111,10 @@ DistanceSensor* sensor1;
 
 
 void setup() {
-  Vector<uint8_t> sensorValues;
   sensorNames.push_back("DistanceLeft");
   displayTest = new TM1637DisplayDevice;
   displayTest2 = new SSD1306DisplayDevice;
-  writer = new CSVFileWriter;
+
   sensor1 = new HCSR04DistanceSensor;
 
   //GPS
@@ -131,10 +132,9 @@ void setup() {
   }
   else
   {
-    usingSD = true;
+    writer = new CSVFileWriter;
     writer->setFileName();
     writer->writeHeader();
-    //writer->writeFile(SD, filename.c_str(), "Data \n ");
   }
 
   // initialize EEPROM with predefined size
@@ -181,11 +181,6 @@ void loop() {
   currentSet->date = gps.date;
   currentSet->time = gps.time;
 
-  if (usingSD)
-  {
-
-  }
-
   CurrentTime = millis();
   uint8_t minDistance = MAX_SENSOR_VALUE;
   int measurements = 0;
@@ -209,17 +204,46 @@ void loop() {
 
     if ((minDistanceToConfirm < MAX_SENSOR_VALUE) && !transmitConfirmedData)
     {
-      //Todo: state change detection
-      transmitConfirmedData = digitalRead(PushButton);
+      buttonState = digitalRead(PushButton);
+      if (buttonState != lastButtonState)
+      {
+        if (buttonState == LOW)
+        {
+          if (!handleBarWidthReset) transmitConfirmedData = true;
+          else handleBarWidthReset = false;
+        }
+        else
+        {
+          buttonPushedTime = CurrentTime;
+        }
+      }
+      else
+      {
+        if (buttonState == HIGH)
+        {
+          //Button state is high for longer than 5 seconds -> reset handlebar width
+          //Todo: do it for all connected sensors
+          if ((CurrentTime - buttonPushedTime > 5000))
+          {
+            setHandleBarWidth(minDistanceToConfirm);
+            displayTest->showValue(minDistanceToConfirm);
+            displayTest2->showValue(minDistanceToConfirm);
+            delay(5000);
+            handleBarWidthReset = true;
+            transmitConfirmedData = false;
+          }
+        }
+      }
+      lastButtonState = buttonState;
     }
     measurements++;
   }
   currentSet->sensorValues[0] = minDistance;
-  
+
   //if nothing was detected, write the dataset to file, otherwise write it to the buffer for confirmation
   if ((minDistance == MAX_SENSOR_VALUE) && dataBuffer.isEmpty())
   {
-    writer->writeData(currentSet);
+    if (writer) writer->writeData(currentSet);
     delete currentSet;
   }
   else
@@ -239,7 +263,7 @@ void loop() {
   if (transmitConfirmedData)
   {
     buffer[1] = minDistanceToConfirm;
-
+    // make sure the minimum distance is saved only once
     using index_t = decltype(dataBuffer)::index_t;
     index_t j;
     for (index_t i = 0; i < dataBuffer.size(); i++)
@@ -260,7 +284,7 @@ void loop() {
     while (!dataBuffer.isEmpty())
     {
       DataSet* dataset = dataBuffer.shift();
-      writer->writeData(dataset);
+      if (writer) writer->writeData(dataset);
       delete dataset;
     }
     minDistanceToConfirm = MAX_SENSOR_VALUE;
@@ -275,7 +299,7 @@ void loop() {
   {
     DataSet* dataset = dataBuffer.shift();
     dataset->sensorValues[0] = MAX_SENSOR_VALUE;
-    writer->writeData(dataset);
+    if (writer) writer->writeData(dataset);
     delete dataset;
   }
 

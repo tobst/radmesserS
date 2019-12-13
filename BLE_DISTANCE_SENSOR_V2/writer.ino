@@ -135,7 +135,6 @@ void CSVFileWriter::writeHeader() {
 }
 
 void CSVFileWriter::writeData(DataSet* set) {
-  //2019-07-16T09:12:46Z
   String dataString;
 
   char dateString[9];
@@ -156,8 +155,52 @@ void CSVFileWriter::writeData(DataSet* set) {
   {
     dataString += ";" + String(set->sensorValues[idx]);
   }
+  dataString += "\n";
 
   this->appendFile(SD, m_filename.c_str(), dataString.c_str() );
 }
 
+void GPXFileWriter::writeHeader() {
+  String headerString;
+  headerString += F(
+                    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                    "<gpx version=\"1.0\">\n"
+                    "\t<trk><trkseg>\n");
+  this->appendFile(SD, m_filename.c_str(), headerString.c_str() );
+}
 
+void GPXFileWriter::writeData(DataSet* set) {
+  String dataString;
+
+  dataString += "\t\t<trkpt ";
+  dataString += "lat=\"";
+  String latitudeString = String(set->location.lat(), 6);
+  dataString += latitudeString;
+  dataString += "\" lon=\"";
+  String longitudeString = String(set->location.lng(), 6);
+  dataString += longitudeString;
+  dataString += "\">";
+
+  char dateTimeString[9];
+  sprintf(
+    dateTimeString,
+    "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ",
+    set->date.year(),
+    set->date.month(),
+    set->date.day(),
+    set->time.hour(),
+    set->time.minute(),
+    set->time.second(),
+    set->time.centisecond());
+  dataString += F("<time>");
+  dataString += dateTimeString;
+  dataString += F("</time>");
+
+  dataString += F("<ele>");
+  dataString += String(set->altitude.meters(), 2);
+  dataString += F("</ele>");
+
+  dataString += F("</trkpt>\n");
+
+  this->appendFile(SD, m_filename.c_str(), dataString.c_str() );
+}

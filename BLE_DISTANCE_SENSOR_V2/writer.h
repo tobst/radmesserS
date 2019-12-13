@@ -55,6 +55,8 @@ class GPXFileWriter : public FileWriter
       m_fileExtension = ".gpx";
     }
     ~GPXFileWriter() {}
+    void writeHeader();
+    void writeData(DataSet*);
   protected:
   private:
 };

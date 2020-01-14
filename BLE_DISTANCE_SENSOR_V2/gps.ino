@@ -7,6 +7,15 @@ void readGPSData() {
   while (SerialGPS.available() > 0) {
     gps.encode(SerialGPS.read());
   }
+  Serial.print(F("DIAGS      Chars="));
+  Serial.print(gps.charsProcessed());
+  Serial.print(F(" Sentences-with-Fix="));
+  Serial.print(gps.sentencesWithFix());
+  Serial.print(F(" Failed-checksum="));
+  Serial.print(gps.failedChecksum());
+  Serial.print(F(" Passed-checksum="));
+  Serial.println(gps.passedChecksum());
+
   if (gps.satellites.value() > 4) {
     gpsState.dist = TinyGPSPlus::distanceBetween(gps.location.lat(), gps.location.lng(), gpsState.originLat, gpsState.originLon);
 

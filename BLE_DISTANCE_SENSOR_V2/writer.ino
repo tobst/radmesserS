@@ -117,7 +117,7 @@ void FileWriter::setFileName() {
   int fileSuffix = 0;
   String base_filename = "/sensorData";
   m_filename = base_filename + String(fileSuffix) + m_fileExtension;
-  while (SD.exists(filename.c_str()))
+  while (SD.exists(m_filename.c_str()))
   {
     fileSuffix++;
     m_filename = base_filename + String(fileSuffix) + m_fileExtension;
@@ -135,12 +135,12 @@ void CSVFileWriter::writeHeader() {
 }
 
 void CSVFileWriter::writeData(DataSet* set) {
-  String dataString;
+  String dataString="";
 
-  char dateString[9];
-  sprintf(dateString, "%02d%02d%04d;", set->date.day(), set->date.month(), set->date.year());
+  char dateString[12];
+  sprintf(dateString, "%02d.%02d.%04d;", set->date.day(), set->date.month(), set->date.year());
   dataString += dateString;
-
+  
   char timeString[9];
   sprintf(timeString, "%02d:%02d:%02d;", set->time.hour(), set->time.minute(), set->time.second());
   dataString += timeString;

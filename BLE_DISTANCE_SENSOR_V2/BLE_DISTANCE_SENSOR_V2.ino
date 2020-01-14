@@ -101,7 +101,7 @@ class MyWriterCallbacks: public BLECharacteristicCallbacks {
 };
 
 DisplayDevice* displayTest;
-DisplayDevice* displayTest2;
+//DisplayDevice* displayTest2;
 
 FileWriter* writer;
 
@@ -111,9 +111,10 @@ DistanceSensor* sensor1;
 
 
 void setup() {
-  sensorNames.push_back("DistanceLeft");
+  //String sensorName1 = "DistanceLeft";
+  //sensorNames.push_back(sensorName1);
   displayTest = new TM1637DisplayDevice;
-  displayTest2 = new SSD1306DisplayDevice;
+  //displayTest2 = new SSD1306DisplayDevice;
 
   sensor1 = new HCSR04DistanceSensor;
 
@@ -126,16 +127,19 @@ void setup() {
   readLastFixFromEEPROM();
 
   Serial.begin(115200);
-  if (!SD.begin())
+  while (!SD.begin())
   {
     Serial.println("Card Mount Failed");
+    delay(1000);
   }
-  else
+
   {
+    Serial.println("Card Mount Succeeded");
     writer = new CSVFileWriter;
     writer->setFileName();
     writer->writeHeader();
   }
+  Serial.println("File initialised");
 
   // initialize EEPROM with predefined size
   EEPROM.begin(EEPROM_SIZE);
@@ -199,8 +203,9 @@ void loop() {
       minDistanceToConfirm = minDistance;
       timeOfMinimum = millis();
     }
-    displayTest->showValue(minDistanceToConfirm);
-    displayTest2->showValue(minDistanceToConfirm);
+    //displayTest->showValue(minDistanceToConfirm);
+    displayTest->showValue(gps.satellites.value());
+    //displayTest2->showValue(minDistanceToConfirm);
 
     if ((minDistanceToConfirm < MAX_SENSOR_VALUE) && !transmitConfirmedData)
     {
@@ -227,7 +232,7 @@ void loop() {
           {
             setHandleBarWidth(minDistanceToConfirm);
             displayTest->showValue(minDistanceToConfirm);
-            displayTest2->showValue(minDistanceToConfirm);
+            //displayTest2->showValue(minDistanceToConfirm);
             delay(5000);
             handleBarWidthReset = true;
             transmitConfirmedData = false;
@@ -238,7 +243,7 @@ void loop() {
     }
     measurements++;
   }
-  currentSet->sensorValues[0] = minDistance;
+  currentSet->sensorValues.push_back(minDistance);
 
   //if nothing was detected, write the dataset to file, otherwise write it to the buffer for confirmation
   if ((minDistance == MAX_SENSOR_VALUE) && dataBuffer.isEmpty())
@@ -284,7 +289,9 @@ void loop() {
     while (!dataBuffer.isEmpty())
     {
       DataSet* dataset = dataBuffer.shift();
+      Serial.printf("Trying to write set to file\n");
       if (writer) writer->writeData(dataset);
+      Serial.printf("Wrote set to file\n");
       delete dataset;
     }
     minDistanceToConfirm = MAX_SENSOR_VALUE;
@@ -299,7 +306,9 @@ void loop() {
   {
     DataSet* dataset = dataBuffer.shift();
     dataset->sensorValues[0] = MAX_SENSOR_VALUE;
+    Serial.printf("Buffer full, writing set to file\n");
     if (writer) writer->writeData(dataset);
+    Serial.printf("Deleting dataset\n");
     delete dataset;
   }
 

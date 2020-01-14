@@ -111,8 +111,8 @@ DistanceSensor* sensor1;
 
 
 void setup() {
-  //String sensorName1 = "DistanceLeft";
-  //sensorNames.push_back(sensorName1);
+  String sensorName1 = "DistanceLeft";
+  sensorNames.push_back(sensorName1);
   displayTest = new TM1637DisplayDevice;
   //displayTest2 = new SSD1306DisplayDevice;
 
@@ -149,12 +149,19 @@ void setup() {
   // PIN-Modes
   pinMode(PushButton, INPUT);
 
+  while (gps.satellites.value() < 4)
+  {
+  readGPSData();
+  delay(1000);
+  Serial.println("Waiting for GPS fix... \n");
+  }
+  Serial.println("Got GPS Fix  \n");
   heartRateBLEInit();
   Serial.println("Waiting a client connection to notify...");
 }
 
 /*
-   Hilfsfunktionen um vereinfacht Speicher zu lesen und schreiben
+   easily read and write EEPROM
 */
 template <class T> int EEPROM_writeAnything(int ee, const T& value)
 {
@@ -227,7 +234,7 @@ void loop() {
         if (buttonState == HIGH)
         {
           //Button state is high for longer than 5 seconds -> reset handlebar width
-          //Todo: do it for all connected sensors
+          //Todo: do it for all connected sensors 
           if ((CurrentTime - buttonPushedTime > 5000))
           {
             setHandleBarWidth(minDistanceToConfirm);
